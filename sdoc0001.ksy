@@ -17,12 +17,59 @@ types:
         contents: 'sdoc'
       - id: version
         contents: '0001'
+  date:
+    doc-ref: https://freemint.github.io/tos.hyp/en/gemdos_datetime.html#Tgetdate
+    meta:
+      bit-endian: be
+    seq:
+      - id: year_offset
+        type: b7
+      - id: month
+        type: b4
+      - id: day
+        type: b5
+    instances:
+      year:
+        value: 1980 + year_offset
+  time:
+    doc-ref: https://freemint.github.io/tos.hyp/en/gemdos_datetime.html#Tgettime
+    meta:
+      bit-endian: be
+    seq:
+      - id: hours
+        type: b5
+      - id: minutes
+        type: b6
+      - id: two_seconds
+        type: b5
+    instances:
+      seconds:
+        value: two_seconds * 2
+  date_time:
+    seq:
+      - id: date
+        type: date
+      - id: time
+        type: time
   meta:
     seq:
       - id: len
         type: u4
       - id: data
+        type: data
         size: len
+    instances:
+      created:
+        io: data._io
+        pos: 72
+        type: date_time
+      modified:
+        io: data._io
+        pos: 76
+        type: date_time
+    types:
+      data:
+        seq: []
   cset:
     seq:
       - id: chsets
@@ -300,9 +347,8 @@ types:
   chunk:
     seq:
       - id: tag
-        type: str
-        encoding: ASCII
-        size: 4
+        enum: chunk_tag
+        type: u4
       - id: size
         type: u4
       - id: data
@@ -310,11 +356,11 @@ types:
         type:
           switch-on: tag
           cases:
-            '"cset"': cset
-            '"sysp"': sysp
-            '"pbuf"': pbuf
-            '"tebu"': tebu
-            '"hcim"': hcim
+            'chunk_tag::cset': cset
+            'chunk_tag::sysp': sysp
+            'chunk_tag::pbuf': pbuf
+            'chunk_tag::tebu': tebu
+            'chunk_tag::hcim': hcim
   margins:
     seq:
       - id: left
@@ -325,3 +371,12 @@ types:
         type: u2
       - id: footer
         type: u2
+enums:
+  chunk_tag:
+    0x63736574: cset
+    0x73797370: sysp
+    0x70627566: pbuf
+    0x74656275: tebu
+    0x6863696d: hcim
+    0x706c3031: pl01
+    0x73797032: syp2
