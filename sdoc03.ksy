@@ -3,42 +3,66 @@ meta:
   file-extension: SDK
   endian: be
 seq:
-- id: magic
-  type: magic
-- id: u0
-  type: u4
-- id: u1
+- contents: [0, 0]
+  size: 2
+- id: tag
+  type: str
+  encoding: ascii
+  size: 8
+  valid: '"sdoc  03"'
+- contents: [0, 0]
+  size: 2
+- id: len
   type: u2
-- id: u2
-  size: 128
+- type: u2
+- id: header
+  size: len
+  type: header
 - id: file_pointers
   type: chunk_file_pointers
 instances:
-  foused:
+  fonts_used:
     type: chunk_fonts_used
     pos: file_pointers.content.ofs_foused01
   params:
     type: chunk_params
     pos: file_pointers.content.ofs_params01
-  kapit:
-    type: chunk_chapter
-    pos: file_pointers.content.ofs_kapit01
-  cdilist:
+  cdi_list:
     type: chunk_cdilist
+    if: file_pointers.content.ofs_cdilist0 > 0
     pos: file_pointers.content.ofs_cdilist0
-  foxlist:
+  content:
+    type: content
+    pos: file_pointers.content.ofs_content_first
+    size: (file_pointers.content.ofs_trailer > 0 ? file_pointers.content.ofs_trailer : _root._io.size) - file_pointers.content.ofs_content_first
+  trailer:
     type: chunk
-    pos: file_pointers.content.ofs_foxlist
-  chunk10:
-    type: chunk
-    pos: file_pointers.content.u10
+    if: file_pointers.content.ofs_trailer > 0
+    pos: file_pointers.content.ofs_trailer
 types:
-  magic:
+  header:
+    seq: []
+  content_last:
     seq:
-      - contents: [0, 0]
-        size: 2
-      - id: sdoc
-        contents: "sdoc  03"
+      - id: kapit
+        type: chunk_chapter
+      - id: streams
+        type: chunk_stream
+        repeat: expr
+        repeat-expr: 0
+  content:
+    seq:
+      - id: chapters
+        type: chapter
+        repeat: eos
+  chapter:
+    seq:
+      - id: kapit
+        type: chunk_chapter
+      - id: streams
+        type: chunk_stream
+        repeat: expr
+        repeat-expr: 3
   chunk:
     seq:
       - size: 2
@@ -58,32 +82,78 @@ types:
       - size: 2
         contents: [0,0]
       - id: tag
-        contents: "stream01"
+        type: str
+        encoding: ascii
+        size: 8
+        valid: '"stream01"'
       - id: len
         type: u4
-      - id: u1
-        type: u2
+      - type: u2
       - id: content
         size: len
+        type: content
+    types:
+      content:
+        seq:
+          - id: index
+            type: u2
+          - id: u1
+            type: u4
+          - id: u2
+            type: u2
+          - id: v1
+            type: u2
+          - id: v2
+            type: u2
+          - id: v3
+            type: u2
+          - id: v4
+            type: u2
+          - id: ofs1
+            type: u4
+          - id: ofs2
+            type: u4
+          - id: u7
+            type: u4
+          #- id: u8
+          #  type: u2
+          #- id: pad
+          #  size: u6
+          #- id: u9
+          #  type: b1
+          #- id: u10
+          #  type: b31
+      text:
+        seq: []
+          #- id: u1
+          #  type: u4
+          #- id: u2
+          #  type: u4
+          #- id: u2
+          #  size: u1
   chunk_chapter:
     seq:
       - contents: "\0\0"
       - id: tag
-        contents: "kapit 01"
+        size: 8
+        valid: '"kapit 01"'
+        type: str
+        encoding: ASCII
+      - contents: "\0\0"
       - id: len
-        type: u4
-      - id: u1
         type: u2
+      - type: u2
       - id: content
         size: len
-      - id: stream
-        type: chunk_stream
   chunk_file_pointers:
     seq:
       - size: 2
         contents: [0,0]
       - id: tag
-        contents: "flptrs01"
+        valid: '"flptrs01"'
+        size: 8
+        type: str
+        encoding: ASCII
       - id: len
         type: u4
       - id: u1
@@ -100,7 +170,7 @@ types:
             type: u4
           - id: ofs_cdilist0
             type: u4
-          - id: ofs_foxlist
+          - id: ofs_trailer
             type: u4
           - id: u5
             type: u4
@@ -110,29 +180,29 @@ types:
             type: u4
           - id: u8
             type: u4
-          - id: ofs_kapit01
+          - id: ofs_content_first
             type: u4
-          - id: u10
+          - id: ofs_content_last
+            if: _parent.len >= 40
             type: u4
   chunk_fonts_used:
     seq:
       - size: 2
         contents: [0, 0]
       - id: tag
-        contents: "foused01"
+        type: str
+        encoding: ASCII
+        size: 8
+        valid: '"foused01"'
       - id: len
         type: u4
-      - id: u1
-        type: u2
-      - id: content
-        size: len
+      - type: u2
+      - id: fonts
+        size: 10
         type: font
+        repeat: expr
+        repeat-expr: len / 10
     types:
-      fonts:
-        seq:
-          - id: font
-            type: font
-            repeat: eos
       font:
         seq:
           - id: index
@@ -146,11 +216,13 @@ types:
       - size: 2
         contents: [0, 0]
       - id: tag
-        contents: "params01"
+        type: str
+        encoding: ASCII
+        size: 8
+        valid: '"params01"'
       - id: len
         type: u4
-      - id: u1
-        type: u2
+      - type: u2
       - id: content
         size: len
   chunk_cdilist:
@@ -158,10 +230,12 @@ types:
       - size: 2
         contents: [0, 0]
       - id: tag
-        contents: "cdilist0"
+        type: str
+        encoding: ASCII
+        size: 8
+        valid: '"cdilist0"'
       - id: len
         type: u4
-      - id: u1
-        type: u2
+      - type: u2
       - id: content
         size: len
