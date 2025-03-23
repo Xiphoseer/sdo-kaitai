@@ -73,8 +73,7 @@ types:
         encoding: ascii
       - id: len
         type: u4
-      - id: u1
-        type: u2
+      - type: u2
       - id: content
         size: len
   chunk_stream:
@@ -97,32 +96,40 @@ types:
         seq:
           - id: index
             type: u2
-          - id: u1
-            type: u4
+          - id: uv1
+            type: u2
+          - id: count
+            type: u2
           - id: u2
             type: u2
           - id: v1
             type: u2
           - id: v2
             type: u2
-          - id: v3
+          - id: len1
             type: u2
           - id: v4
             type: u2
-          - id: ofs1
+          - id: len3
             type: u4
           - id: ofs2
             type: u4
-          - id: u7
+          - id: len2
             type: u4
-          #- id: u8
-          #  type: u2
-          #- id: pad
-          #  size: u6
-          #- id: u9
-          #  type: b1
-          #- id: u10
-          #  type: b31
+          - id: iter
+            size: 8
+            repeat: expr
+            repeat-expr: count
+          - id: buf0
+            size: len1
+          - id: buf1
+            size: len2
+          - id: buf2
+            size: len3
+          - id: after
+            type: u2
+          - id: after2
+            size: 2
       text:
         seq: []
           #- id: u1
@@ -145,6 +152,34 @@ types:
       - type: u2
       - id: content
         size: len
+        type: content
+    types:
+      content:
+        seq:
+          - id: v1
+            type: u2
+          - id: len1
+            type: u4
+          - id: v3
+            type: u2
+          - id: v4
+            type: u2
+          - id: v5
+            type: s2
+          - id: v6
+            type: s2
+          - id: v7
+            type: s2
+          - id: v8
+            type: s2
+          - id: v9
+            type: s2
+          - id: v10
+            type: s2
+          - id: buf1
+            size: 66
+          - id: buf
+            size: len1
   chunk_file_pointers:
     seq:
       - size: 2
