@@ -31,38 +31,43 @@ instances:
     type: chunk_cdilist
     if: file_pointers.content.ofs_cdilist0 > 0
     pos: file_pointers.content.ofs_cdilist0
-  content:
-    type: content
-    pos: file_pointers.content.ofs_content_first
-    size: (file_pointers.content.ofs_trailer > 0 ? file_pointers.content.ofs_trailer : _root._io.size) - file_pointers.content.ofs_content_first
-  trailer:
+  foxlist:
     type: chunk
     if: file_pointers.content.ofs_trailer > 0
     pos: file_pointers.content.ofs_trailer
+  chapters:
+    #type: chapter
+    type: chapter_ref(_index)
+    repeat: expr
+    repeat-expr: file_pointers.content.ofs_chapters.size
 types:
   header:
     seq: []
-  content_last:
-    seq:
-      - id: kapit
-        type: chunk_chapter
-      - id: streams
-        type: chunk_stream
-        repeat: expr
-        repeat-expr: 0
-  content:
-    seq:
-      - id: chapters
+  chapter_ref:
+    params:
+      - id: i
+        type: u4
+    instances:
+      pos:
+        value: _parent.file_pointers.content.ofs_chapters[i]
+      body:
+        pos: _parent.file_pointers.content.ofs_chapters[i]
+        io: _parent._io
         type: chapter
-        repeat: eos
   chapter:
     seq:
       - id: kapit
         type: chunk_chapter
-      - id: streams
+      - id: body
         type: chunk_stream
-        repeat: expr
-        repeat-expr: 3
+      - id: header_footer
+        type: chunk_stream
+      - id: index
+        type: chunk_stream
+        if: kapit.content.v9 >= 0
+      - id: footnotes
+        type: chunk_stream
+        if: kapit.content.v10 >= 0
   chunk:
     seq:
       - size: 2
@@ -215,11 +220,9 @@ types:
             type: u4
           - id: u8
             type: u4
-          - id: ofs_content_first
+          - id: ofs_chapters
             type: u4
-          - id: ofs_content_last
-            if: _parent.len >= 40
-            type: u4
+            repeat: eos
   chunk_fonts_used:
     seq:
       - size: 2
